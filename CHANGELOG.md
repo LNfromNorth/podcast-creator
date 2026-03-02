@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-02-18
+
+### Added
+- `language` parameter for multilingual podcast generation — accepts ISO 639-1 (`pt`) or BCP 47 (`pt-BR`) codes to instruct LLMs to generate outlines and transcripts in the specified language
+- New `resolve_language_name()` utility for resolving language codes to full names via `pycountry`
+- `language` field on `EpisodeProfile` for per-profile language defaults
+
 ## [0.11.2] - 2026-02-17
 
 ### Fixed

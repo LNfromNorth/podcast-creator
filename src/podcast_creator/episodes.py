@@ -23,6 +23,9 @@ class EpisodeProfile(BaseModel):
         "", description="Default briefing for this episode type"
     )
     num_segments: int = Field(3, description="Number of podcast segments")
+    language: Optional[str] = Field(
+        None, description="Language code (e.g., 'pt', 'pt-BR', 'es') for podcast generation"
+    )
     outline_config: Optional[Dict[str, Any]] = Field(
         None, description="Config dict passed to AIFactory.create_language() for outline generation"
     )

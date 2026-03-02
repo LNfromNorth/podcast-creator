@@ -63,6 +63,7 @@ async def generate_outline_node(state: PodcastState, config: RunnableConfig) -> 
             "speakers": state["speaker_profile"].speakers
             if state["speaker_profile"]
             else [],
+            "language": state.get("language"),
         }
     )
 
@@ -137,6 +138,7 @@ async def generate_transcript_node(state: PodcastState, config: RunnableConfig) 
             "speakers": speaker_profile.speakers,
             "speaker_names": speaker_names,
             "transcript": transcript,
+            "language": state.get("language"),
         }
 
         transcript_prompt = get_transcript_prompter()
