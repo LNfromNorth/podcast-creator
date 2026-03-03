@@ -773,18 +773,26 @@ def show_episode_profiles_page():
                 )
             
             num_segments = st.slider("Number of Segments:", 1, 10, 4, key="new_episode_segments")
+
+            language = st.text_input(
+                "Language:",
+                placeholder="e.g., pt, pt-BR, es, fr (leave empty for English)",
+                key="new_episode_language",
+                help="Language code for podcast generation. Uses ISO 639-1 (e.g., 'pt') or BCP 47 (e.g., 'pt-BR') format."
+            )
+
             default_briefing = st.text_area(
-                "Default Briefing:", 
+                "Default Briefing:",
                 value="Create an engaging discussion about the topic",
                 height=100,
                 key="new_episode_briefing"
             )
-            
+
             st.markdown("---")
-            
+
             # Action buttons
             col1, col2 = st.columns(2)
-            
+
             with col1:
                 if st.button("✅ Create Profile", type="primary", key="create_episode_profile"):
                     if not profile_name:
@@ -804,6 +812,8 @@ def show_episode_profiles_page():
                             "num_segments": num_segments,
                             "default_briefing": default_briefing
                         }
+                        if language.strip():
+                            profile_data["language"] = language.strip()
                         
                         # Validate profile
                         validation_errors = profile_manager.validate_episode_profile(profile_data)
@@ -910,24 +920,32 @@ def show_episode_profiles_page():
                     )
                 
                 num_segments = st.slider(
-                    "Number of Segments:", 
-                    1, 10, 
+                    "Number of Segments:",
+                    1, 10,
                     value=edit_profile_data.get('num_segments', 4),
                     key="edit_episode_segments"
                 )
-                
+
+                language = st.text_input(
+                    "Language:",
+                    value=edit_profile_data.get('language', ''),
+                    placeholder="e.g., pt, pt-BR, es, fr (leave empty for English)",
+                    key="edit_episode_language",
+                    help="Language code for podcast generation. Uses ISO 639-1 (e.g., 'pt') or BCP 47 (e.g., 'pt-BR') format."
+                )
+
                 default_briefing = st.text_area(
-                    "Default Briefing:", 
+                    "Default Briefing:",
                     value=edit_profile_data.get('default_briefing', ''),
                     height=100,
                     key="edit_episode_briefing"
                 )
-                
+
                 st.markdown("---")
-                
+
                 # Action buttons
                 col1, col2 = st.columns(2)
-                
+
                 with col1:
                     if st.button("✅ Save Changes", type="primary", key="save_episode_changes"):
                         if not new_profile_name.strip():
@@ -945,6 +963,8 @@ def show_episode_profiles_page():
                                 "num_segments": num_segments,
                                 "default_briefing": default_briefing
                             }
+                            if language.strip():
+                                updated_profile_data["language"] = language.strip()
                             
                             # Validate profile
                             validation_errors = profile_manager.validate_episode_profile(updated_profile_data)
@@ -1008,7 +1028,11 @@ def show_episode_profiles_page():
                         transcript_provider = profile_data.get('transcript_provider', 'openai')
                         transcript_model = profile_data.get('transcript_model', 'N/A')
                         st.markdown(f"**Transcript:** {transcript_provider}/{transcript_model}")
-                        
+
+                        profile_language = profile_data.get('language')
+                        if profile_language:
+                            st.markdown(f"**Language:** {profile_language}")
+
                         # Action buttons
                         col1, col2 = st.columns(2)
                         
@@ -1051,6 +1075,7 @@ def show_episode_profiles_page():
                             st.markdown(f"**Outline Model:** {profile_data.get('outline_model', 'N/A')}")
                             st.markdown(f"**Transcript Provider:** {profile_data.get('transcript_provider', 'openai')}")
                             st.markdown(f"**Transcript Model:** {profile_data.get('transcript_model', 'N/A')}")
+                            st.markdown(f"**Language:** {profile_data.get('language', 'Default (English)')}")
                             st.markdown("**Default Briefing:**")
                             st.text(profile_data.get('default_briefing', 'No briefing set'))
         else:
@@ -1282,7 +1307,16 @@ def show_generate_podcast_page():
                 num_segments = profile_data.get('num_segments', 4)
                 briefing = profile_data.get('default_briefing', '')
                 briefing_suffix = ""
-        
+
+            # Language setting (always visible, outside override block)
+            language = st.text_input(
+                "Language:",
+                value=profile_data.get('language', ''),
+                placeholder="e.g., pt, pt-BR, es, fr (leave empty for English)",
+                key="generation_language",
+                help="Language code for podcast generation. Uses ISO 639-1 (e.g., 'pt') or BCP 47 (e.g., 'pt-BR') format."
+            )
+
         st.markdown("---")
         
         # Briefing editor section
@@ -1430,6 +1464,10 @@ def show_generate_podcast_page():
                         "output_dir": f"{output_dir}/{episode_name}",
                         "episode_profile": episode_profile
                     }
+
+                    # Add language if specified
+                    if language and language.strip():
+                        generation_params["language"] = language.strip()
                     
                     # Add overrides if not using defaults
                     if not use_defaults:

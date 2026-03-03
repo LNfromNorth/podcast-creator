@@ -45,6 +45,20 @@ class TestEpisodeProfile:
         assert profile.num_segments == 3
         assert profile.outline_config is None
         assert profile.transcript_config is None
+        assert profile.language is None
+
+    def test_episode_profile_with_language(self):
+        """Test episode profile with language field"""
+        profile = EpisodeProfile(
+            speaker_config="ai_researchers",
+            language="pt-BR",
+        )
+        assert profile.language == "pt-BR"
+
+    def test_episode_profile_language_none_by_default(self):
+        """Test that language defaults to None"""
+        profile = EpisodeProfile(speaker_config="ai_researchers")
+        assert profile.language is None
 
     def test_episode_profile_with_configs(self):
         """Test episode profile creation with outline/transcript configs"""

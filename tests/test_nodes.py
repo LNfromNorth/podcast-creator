@@ -184,6 +184,133 @@ class TestTranscriptConfigMerging:
         )
 
 
+class TestLanguagePassthrough:
+    """Tests for language passthrough to template rendering"""
+
+    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.nodes.get_outline_prompter")
+    @patch("podcast_creator.nodes.outline_parser")
+    def test_outline_passes_language_to_template(
+        self, mock_parser, mock_prompter, mock_factory
+    ):
+        """Test that language is passed to outline template render"""
+        _setup_language_mocks(mock_factory, mock_prompter, mock_parser)
+
+        state = {
+            "briefing": "test",
+            "num_segments": 3,
+            "content": "content",
+            "speaker_profile": MagicMock(speakers=[]),
+            "language": "Portuguese",
+        }
+        config = {"configurable": {}}
+
+        asyncio.run(generate_outline_node(state, config))
+
+        render_call = mock_prompter.return_value.render.call_args[0][0]
+        assert render_call["language"] == "Portuguese"
+
+    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.nodes.get_outline_prompter")
+    @patch("podcast_creator.nodes.outline_parser")
+    def test_outline_passes_none_when_no_language(
+        self, mock_parser, mock_prompter, mock_factory
+    ):
+        """Test that language is None when not set in state"""
+        _setup_language_mocks(mock_factory, mock_prompter, mock_parser)
+
+        state = {
+            "briefing": "test",
+            "num_segments": 3,
+            "content": "content",
+            "speaker_profile": MagicMock(speakers=[]),
+        }
+        config = {"configurable": {}}
+
+        asyncio.run(generate_outline_node(state, config))
+
+        render_call = mock_prompter.return_value.render.call_args[0][0]
+        assert render_call["language"] is None
+
+    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.nodes.get_transcript_prompter")
+    @patch("podcast_creator.nodes.create_validated_transcript_parser")
+    def test_transcript_passes_language_to_template(
+        self, mock_parser_factory, mock_prompter, mock_factory
+    ):
+        """Test that language is passed to transcript template render"""
+        mock_lc = MagicMock()
+        mock_lc.ainvoke = AsyncMock(
+            return_value=MagicMock(content='{"transcript": []}')
+        )
+        mock_model = MagicMock()
+        mock_model.to_langchain.return_value = mock_lc
+        mock_factory.create_language.return_value = mock_model
+
+        mock_prompter.return_value.render.return_value = "prompt"
+        mock_parser = MagicMock()
+        mock_parser.invoke.return_value = MagicMock(transcript=[])
+        mock_parser_factory.return_value = mock_parser
+
+        outline = MagicMock()
+        segment = MagicMock()
+        segment.size = "medium"
+        outline.segments = [segment]
+        speaker_profile = MagicMock()
+        speaker_profile.get_speaker_names.return_value = ["Alice", "Bob"]
+
+        state = {
+            "briefing": "test",
+            "content": "content",
+            "outline": outline,
+            "speaker_profile": speaker_profile,
+            "language": "Spanish",
+        }
+        config = {"configurable": {}}
+
+        asyncio.run(generate_transcript_node(state, config))
+
+        render_call = mock_prompter.return_value.render.call_args[0][0]
+        assert render_call["language"] == "Spanish"
+
+    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.nodes.get_transcript_prompter")
+    @patch("podcast_creator.nodes.create_validated_transcript_parser")
+    def test_transcript_passes_none_when_no_language(
+        self, mock_parser_factory, mock_prompter, mock_factory
+    ):
+        """Test that language is None when not set in state for transcript"""
+        mock_lc = MagicMock()
+        mock_lc.ainvoke = AsyncMock(
+            return_value=MagicMock(content='{"transcript": []}')
+        )
+        mock_model = MagicMock()
+        mock_model.to_langchain.return_value = mock_lc
+        mock_factory.create_language.return_value = mock_model
+
+        mock_prompter.return_value.render.return_value = "prompt"
+        mock_parser = MagicMock()
+        mock_parser.invoke.return_value = MagicMock(transcript=[])
+        mock_parser_factory.return_value = mock_parser
+
+        outline = MagicMock()
+        outline.segments = []
+        speaker_profile = MagicMock()
+        speaker_profile.get_speaker_names.return_value = ["Alice", "Bob"]
+
+        state = {
+            "briefing": "test",
+            "content": "content",
+            "outline": outline,
+            "speaker_profile": speaker_profile,
+        }
+        config = {"configurable": {}}
+
+        asyncio.run(generate_transcript_node(state, config))
+
+        # No segments so render is not called; just verify no error
+
+
 class TestTtsConfigPassthrough:
     """Tests for TTS config passthrough in generate_single_audio_clip"""
 

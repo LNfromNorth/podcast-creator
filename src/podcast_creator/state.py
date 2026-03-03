@@ -11,6 +11,7 @@ class PodcastState(TypedDict):
     content: Union[str, List[str]]
     briefing: str
     num_segments: int
+    language: Optional[str]
 
     # Generated content
     outline: Optional[Outline]

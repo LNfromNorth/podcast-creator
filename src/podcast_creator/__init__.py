@@ -19,6 +19,7 @@ from .graph import PodcastState, create_podcast
 from .graph import graph as podcast_graph
 from .speakers import Speaker, SpeakerConfig, SpeakerProfile, load_speaker_config
 from .episodes import EpisodeProfile, EpisodeConfig, load_episode_config
+from .language import resolve_language_name
 
 try:
     import importlib.metadata as metadata
@@ -59,4 +60,6 @@ __all__ = [
     "EpisodeProfile",
     "EpisodeConfig",
     "load_episode_config",
+    # Language utilities
+    "resolve_language_name",
 ]

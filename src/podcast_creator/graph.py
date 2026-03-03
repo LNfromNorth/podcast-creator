@@ -12,6 +12,7 @@ from .nodes import (
     generate_transcript_node,
     route_audio_generation,
 )
+from .language import resolve_language_name
 from .speakers import load_speaker_config
 from .episodes import load_episode_config
 from .state import PodcastState
@@ -56,6 +57,7 @@ async def create_podcast(
     transcript_config: Optional[Dict] = None,
     retry_max_attempts: Optional[int] = None,
     retry_wait_multiplier: Optional[int] = None,
+    language: Optional[str] = None,
 ) -> Dict:
     """
     High-level function to create a podcast using the LangGraph workflow
@@ -77,6 +79,7 @@ async def create_podcast(
         transcript_config: Config dict passed to AIFactory.create_language() for transcript
         retry_max_attempts: Max retry attempts for LLM calls (default 3)
         retry_wait_multiplier: Exponential backoff multiplier in seconds (default 2)
+        language: Language code for podcast generation (e.g., 'pt', 'pt-BR', 'es')
 
     Returns:
         Dict with results including final audio path
@@ -94,6 +97,7 @@ async def create_podcast(
         num_segments = num_segments or episode_config.num_segments
         outline_config = outline_config if outline_config is not None else episode_config.outline_config
         transcript_config = transcript_config if transcript_config is not None else episode_config.transcript_config
+        language = language or episode_config.language
 
         # Resolve briefing with episode profile logic
         if briefing:
@@ -125,6 +129,9 @@ async def create_podcast(
     if not resolved_briefing:
         raise ValueError("briefing is required (either directly, via episode_profile, or with briefing_suffix)")
     
+    # Resolve language code to name
+    resolved_language = resolve_language_name(language) if language else None
+
     # Load speaker profile
     speaker_profile = load_speaker_config(speaker_config)
 
@@ -137,6 +144,7 @@ async def create_podcast(
         content=content,
         briefing=resolved_briefing,
         num_segments=num_segments,
+        language=resolved_language,
         outline=None,
         transcript=[],
         audio_clips=[],
