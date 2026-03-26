@@ -333,14 +333,14 @@ def show_speaker_profiles_page():
             with col1:
                 tts_provider = ProviderChecker.render_tts_provider_selector(
                     "TTS Provider:",
-                    current_provider="elevenlabs",
+                    current_provider="qwen",
                     key="new_tts_provider",
                     help_text="Choose a Text-to-Speech provider"
                 )
             with col2:
                 # Get default model for selected provider
                 defaults = ProviderChecker.get_default_models(tts_provider)
-                default_model = defaults.get("tts", "eleven_flash_v2_5")
+                default_model = defaults.get("tts", "qwen3-tts-flash")
                 tts_model = st.text_input("TTS Model:", value=default_model, key="new_tts_model")
             
             st.markdown("### Speakers")
@@ -450,7 +450,7 @@ def show_speaker_profiles_page():
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    current_tts_provider = edit_profile_data.get('tts_provider', 'elevenlabs')
+                    current_tts_provider = edit_profile_data.get('tts_provider', 'qwen')
                     tts_provider = ProviderChecker.render_tts_provider_selector(
                         "TTS Provider:",
                         current_provider=current_tts_provider,
@@ -460,7 +460,7 @@ def show_speaker_profiles_page():
                 with col2:
                     # Get default model for selected provider
                     defaults = ProviderChecker.get_default_models(tts_provider)
-                    default_model = defaults.get("tts", "eleven_flash_v2_5")
+                    default_model = defaults.get("tts", "qwen3-tts-flash")
                     
                     current_tts_model = edit_profile_data.get('tts_model', default_model)
                     tts_model = st.text_input(

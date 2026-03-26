@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
+from .tts import normalize_tts_provider
+
 
 class Speaker(BaseModel):
     """Individual speaker profile"""
@@ -31,12 +33,21 @@ class Speaker(BaseModel):
             raise ValueError("Speaker name cannot be empty")
         return v.strip()
 
+    @field_validator("tts_provider")
+    @classmethod
+    def validate_tts_provider(cls, v):
+        if v is None:
+            return None
+        if not v.strip():
+            raise ValueError("TTS provider cannot be empty")
+        return normalize_tts_provider(v)
+
 
 class SpeakerProfile(BaseModel):
     """Collection of speakers with shared TTS configuration"""
 
     tts_provider: str = Field(
-        ..., description="TTS service provider (elevenlabs, openai, google)"
+        ..., description="TTS service provider (elevenlabs, openai, google, qwen)"
     )
     tts_model: str = Field(..., description="TTS model name")
     speakers: List[Speaker] = Field(..., description="List of speakers in this profile")
@@ -61,6 +72,13 @@ class SpeakerProfile(BaseModel):
             raise ValueError("Voice IDs must be unique")
 
         return v
+
+    @field_validator("tts_provider")
+    @classmethod
+    def validate_tts_provider(cls, v):
+        if not v or not v.strip():
+            raise ValueError("TTS provider cannot be empty")
+        return normalize_tts_provider(v)
 
     def get_speaker_names(self) -> List[str]:
         """Get list of speaker names"""

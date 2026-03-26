@@ -41,30 +41,30 @@ class ProfileManager:
         default_speakers = {
             "profiles": {
                 "ai_researchers": {
-                    "tts_provider": "elevenlabs",
-                    "tts_model": "eleven_flash_v2_5",
+                    "tts_provider": "qwen",
+                    "tts_model": "qwen3-tts-flash",
                     "speakers": [
                         {
                             "name": "Dr. Alex Chen",
-                            "voice_id": "voice_id_1",
+                            "voice_id": "Serena",
                             "backstory": "Senior AI researcher with focus on machine learning ethics",
                             "personality": "Thoughtful, asks probing questions, explains complex concepts clearly"
                         },
                         {
                             "name": "Jamie Rodriguez",
-                            "voice_id": "voice_id_2", 
+                            "voice_id": "Ethan", 
                             "backstory": "Tech journalist and startup advisor with 10 years experience",
                             "personality": "Enthusiastic, great at explanations, bridges technical and business perspectives"
                         }
                     ]
                 },
                 "solo_expert": {
-                    "tts_provider": "elevenlabs",
-                    "tts_model": "eleven_flash_v2_5",
+                    "tts_provider": "qwen",
+                    "tts_model": "qwen3-tts-flash",
                     "speakers": [
                         {
                             "name": "Dr. Sarah Mitchell",
-                            "voice_id": "voice_id_3",
+                            "voice_id": "Cherry",
                             "backstory": "Expert educator and researcher with ability to explain complex topics",
                             "personality": "Clear, authoritative, engaging, uses analogies and examples"
                         }

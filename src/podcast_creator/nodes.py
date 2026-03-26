@@ -19,6 +19,7 @@ from .core import (
 )
 from .retry import create_retry_decorator, get_retry_config
 from .state import PodcastState
+from .tts import generate_speech_file
 
 
 async def generate_outline_node(state: PodcastState, config: RunnableConfig) -> Dict:
@@ -260,18 +261,13 @@ async def generate_single_audio_clip(dialogue_info: Dict) -> Path:
     filename = f"{index:04d}.mp3"
     clip_path = clips_dir / filename
 
-    # Extract named params from tts_config, pass rest as kwargs
-    api_key = tts_config.pop("api_key", None)
-    base_url = tts_config.pop("base_url", None)
-
-    # Create TTS model
-    tts_model = AIFactory.create_text_to_speech(
-        tts_provider, tts_model_name, api_key=api_key, base_url=base_url, **tts_config
-    )
-
-    # Generate audio
-    await tts_model.agenerate_speech(
-        text=dialogue.dialogue, voice=voices[dialogue.speaker], output_file=clip_path
+    await generate_speech_file(
+        provider=tts_provider,
+        model_name=tts_model_name,
+        text=dialogue.dialogue,
+        voice=voices[dialogue.speaker],
+        output_file=clip_path,
+        tts_config=tts_config,
     )
 
     logger.info(f"Generated audio clip: {clip_path}")

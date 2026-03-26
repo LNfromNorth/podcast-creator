@@ -53,6 +53,7 @@ class ProviderChecker:
         
         # TTS Providers
         provider_status["elevenlabs"] = os.environ.get("ELEVENLABS_API_KEY") is not None
+        provider_status["qwen"] = os.environ.get("DASHSCOPE_API_KEY") is not None
         # Note: openai and google are already checked above for LLM, they also do TTS
         
         available_providers = [k for k, v in provider_status.items() if v]
@@ -89,7 +90,7 @@ class ProviderChecker:
         available_providers, _ = ProviderChecker.check_available_providers()
         
         # TTS providers
-        tts_providers = ["elevenlabs", "openai", "google"]
+        tts_providers = ["elevenlabs", "openai", "google", "qwen"]
         
         return [p for p in tts_providers if p in available_providers]
     
@@ -122,6 +123,9 @@ class ProviderChecker:
                 "outline": "gemini-1.5-pro",
                 "transcript": "gemini-1.5-pro",
                 "tts": "standard"
+            },
+            "qwen": {
+                "tts": "qwen3-tts-flash"
             },
             "groq": {
                 "outline": "llama-3.1-70b-versatile",
@@ -301,6 +305,7 @@ class ProviderChecker:
                     "mistral": "MISTRAL_API_KEY",
                     "deepseek": "DEEPSEEK_API_KEY",
                     "elevenlabs": "ELEVENLABS_API_KEY",
+                    "qwen": "DASHSCOPE_API_KEY",
                     "gemini": "GOOGLE_API_KEY or GEMINI_API_KEY",
                     "vertexai": "VERTEX_PROJECT, VERTEX_LOCATION, GOOGLE_APPLICATION_CREDENTIALS",
                     "azure": "AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT_NAME, AZURE_OPENAI_API_VERSION",

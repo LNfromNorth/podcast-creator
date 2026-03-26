@@ -7,6 +7,12 @@ Handles voice selection for different TTS providers.
 import streamlit as st
 from typing import Dict, Optional
 
+from podcast_creator.tts import (
+    QWEN_TTS_DEFAULT_MODEL,
+    QWEN_TTS_DEFAULT_VOICES,
+    normalize_tts_provider,
+)
+
 try:
     from esperanto import AIFactory
     ESPERANTO_AVAILABLE = True
@@ -34,6 +40,11 @@ class VoiceProvider:
         Returns:
             Dictionary mapping voice names to voice IDs
         """
+        provider = normalize_tts_provider(provider)
+
+        if provider == "qwen":
+            return VoiceProvider.get_default_voices(provider)
+
         if not ESPERANTO_AVAILABLE:
             return {}
         
@@ -126,7 +137,9 @@ class VoiceProvider:
         Returns:
             Selected voice ID
         """
-        if not ESPERANTO_AVAILABLE:
+        provider = normalize_tts_provider(provider)
+
+        if not ESPERANTO_AVAILABLE and provider != "qwen":
             st.warning("⚠️ Esperanto library not available. Using text input for voice ID.")
             return st.text_input(
                 "Voice ID:", 
@@ -251,6 +264,10 @@ class VoiceProvider:
                 "Standard B": "en-US-Standard-B",
                 "Standard C": "en-US-Standard-C",
                 "Standard D": "en-US-Standard-D"
+            },
+            "qwen": {
+                f"{name} ({QWEN_TTS_DEFAULT_MODEL})": voice_id
+                for name, voice_id in QWEN_TTS_DEFAULT_VOICES.items()
             }
         }
         

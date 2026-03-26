@@ -7,6 +7,11 @@ import os
 import subprocess
 import sys
 
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover
+    load_dotenv = None
+
 
 def copy_resource_file(
     source_path: str, target_path: Path, description: str
@@ -313,6 +318,9 @@ def ui(port: int, host: str, skip_init_check: bool) -> None:
         sys.exit(1)
     
     current_dir = Path.cwd()
+
+    if load_dotenv is not None:
+        load_dotenv(current_dir / ".env")
     
     # Check dependencies unless skipped
     if not skip_init_check:

@@ -243,7 +243,7 @@ configure("speakers_config", {
 - **🔧 Fully Configurable**: Multiple AI providers (OpenAI, Anthropic, Google, etc.)
 - **📊 Multi-Content Support**: Combine text, files, and URLs in structured arrays
 - **🤖 AI-Powered Generation**: Creates structured outlines and natural dialogues
-- **🎵 Multi-Provider TTS**: ElevenLabs, OpenAI, Google TTS support
+- **🎵 Multi-Provider TTS**: ElevenLabs, OpenAI, Google, Qwen TTS support
 - **📝 Flexible Templates**: Jinja2-based prompt customization
 - **🌍 Multilingual Support**: Generate content in multiple languages
 - **📚 Episode Library**: Built-in audio playback and transcript viewing

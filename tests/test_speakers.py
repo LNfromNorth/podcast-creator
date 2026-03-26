@@ -54,6 +54,15 @@ class TestSpeakerProfile:
             "voice_settings": {"stability": 0.8},
         }
 
+    def test_speaker_profile_normalizes_qwen_provider_alias(self):
+        """Test Qwen provider aliases normalize to a single provider name."""
+        profile = SpeakerProfile(
+            tts_provider="Qwen-TTS",
+            tts_model="qwen-tts-latest",
+            speakers=self._make_speakers(),
+        )
+        assert profile.tts_provider == "qwen"
+
     def test_speaker_profile_from_json_with_tts_config(self, tmp_path):
         """Test loading speaker profile with tts_config from JSON"""
         config_data = {
@@ -135,6 +144,17 @@ class TestSpeakerTtsOverrides:
         assert speaker.tts_provider == "elevenlabs"
         assert speaker.tts_model == "eleven_multilingual_v2"
         assert speaker.tts_config == {"voice_settings": {"stability": 0.9}}
+
+    def test_speaker_normalizes_qwen_provider_alias(self):
+        """Test speaker-level Qwen aliases normalize consistently."""
+        speaker = Speaker(
+            name="Alice",
+            voice_id="Cherry",
+            backstory="AI researcher",
+            personality="Curious",
+            tts_provider="qwen_tts",
+        )
+        assert speaker.tts_provider == "qwen"
 
     def test_speaker_from_json_with_tts_fields(self, tmp_path):
         """Test loading speakers with per-speaker TTS fields from JSON"""

@@ -2,6 +2,7 @@
 Tests for node config merging logic
 """
 import asyncio
+import os
 from unittest.mock import patch, MagicMock, AsyncMock
 from pathlib import Path
 
@@ -314,7 +315,7 @@ class TestLanguagePassthrough:
 class TestTtsConfigPassthrough:
     """Tests for TTS config passthrough in generate_single_audio_clip"""
 
-    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.tts.AIFactory")
     def test_tts_config_extracts_api_key_and_base_url(self, mock_factory):
         """Test that api_key and base_url are extracted from tts_config"""
         mock_tts = MagicMock()
@@ -350,7 +351,7 @@ class TestTtsConfigPassthrough:
             voice_settings={"stability": 0.8},
         )
 
-    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.tts.AIFactory")
     def test_tts_config_empty_passes_none_for_named_params(self, mock_factory):
         """Test that empty tts_config passes None for api_key and base_url"""
         mock_tts = MagicMock()
@@ -378,7 +379,7 @@ class TestTtsConfigPassthrough:
             "openai", "tts-1", api_key=None, base_url=None
         )
 
-    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.tts.AIFactory")
     def test_tts_config_missing_defaults_to_empty(self, mock_factory):
         """Test that missing tts_config key defaults to empty dict behavior"""
         mock_tts = MagicMock()
@@ -405,7 +406,7 @@ class TestTtsConfigPassthrough:
             "openai", "tts-1", api_key=None, base_url=None
         )
 
-    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.tts.AIFactory")
     def test_tts_config_does_not_mutate_original(self, mock_factory):
         """Test that extracting api_key/base_url doesn't mutate the original dict"""
         mock_tts = MagicMock()
@@ -432,6 +433,69 @@ class TestTtsConfigPassthrough:
 
         # Original dict should not be mutated
         assert "api_key" in original_config
+
+    @patch.dict(os.environ, {"DASHSCOPE_API_KEY": "dashscope-key"}, clear=False)
+    @patch("podcast_creator.tts.httpx.AsyncClient")
+    def test_qwen_tts_uses_dashscope_api(self, mock_async_client):
+        """Qwen TTS should call the DashScope generation endpoint and download audio."""
+        client = MagicMock()
+        client.__aenter__.return_value = client
+        client.__aexit__.return_value = AsyncMock()
+        client.post = AsyncMock(
+            return_value=MagicMock(
+                raise_for_status=MagicMock(),
+                json=MagicMock(
+                    return_value={
+                        "output": {"audio": {"url": "https://audio.example.com/clip.mp3"}}
+                    }
+                ),
+            )
+        )
+        client.get = AsyncMock(
+            return_value=MagicMock(
+                raise_for_status=MagicMock(),
+                content=b"audio-bytes",
+            )
+        )
+        mock_async_client.return_value = client
+
+        dialogue = MagicMock()
+        dialogue.speaker = "Alice"
+        dialogue.dialogue = "Hello from Qwen"
+
+        dialogue_info = {
+            "dialogue": dialogue,
+            "index": 0,
+            "output_dir": Path("/tmp/test_output"),
+            "tts_provider": "qwen-tts",
+            "tts_model": "qwen-tts-latest",
+            "voices": {"Alice": "Cherry"},
+            "tts_config": {"language_type": "zh", "sample_rate": 24000},
+        }
+
+        with patch("pathlib.Path.write_bytes") as mock_write_bytes:
+            asyncio.run(generate_single_audio_clip(dialogue_info))
+
+        mock_async_client.assert_called_once_with(timeout=120.0)
+        client.post.assert_awaited_once()
+        post_call = client.post.call_args
+        assert (
+            post_call.kwargs["url"]
+            if "url" in post_call.kwargs
+            else post_call.args[0]
+        ) == "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
+        assert post_call.kwargs["headers"]["Authorization"] == "Bearer dashscope-key"
+        assert post_call.kwargs["json"] == {
+            "model": "qwen-tts-latest",
+            "input": {
+                "text": "Hello from Qwen",
+                "voice": "Cherry",
+                "language_type": "zh",
+            },
+            "parameters": {"sample_rate": 24000},
+        }
+        client.get.assert_awaited_once_with("https://audio.example.com/clip.mp3")
+        mock_write_bytes.assert_called_once_with(b"audio-bytes")
 
 
 class TestPerSpeakerTtsOverride:
@@ -671,7 +735,7 @@ class TestTtsRetry:
             "speaker_profile": profile,
         }
 
-    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.tts.AIFactory")
     @patch("podcast_creator.nodes.asyncio.sleep", new_callable=AsyncMock)
     def test_retries_on_transient_tts_error(self, mock_sleep, mock_factory):
         """generate_all_audio_node retries TTS calls on transient errors"""
@@ -696,7 +760,7 @@ class TestTtsRetry:
 
         assert mock_tts.agenerate_speech.call_count == 3
 
-    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.tts.AIFactory")
     @patch("podcast_creator.nodes.asyncio.sleep", new_callable=AsyncMock)
     def test_no_retry_on_value_error(self, mock_sleep, mock_factory):
         """generate_all_audio_node does not retry ValueError from TTS"""
@@ -719,7 +783,7 @@ class TestTtsRetry:
 
         assert mock_tts.agenerate_speech.call_count == 1
 
-    @patch("podcast_creator.nodes.AIFactory")
+    @patch("podcast_creator.tts.AIFactory")
     @patch("podcast_creator.nodes.asyncio.sleep", new_callable=AsyncMock)
     def test_respects_configurable_retry_settings(self, mock_sleep, mock_factory):
         """Retry config from configurable dict is respected for TTS"""
