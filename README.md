@@ -103,6 +103,35 @@ async def main():
 asyncio.run(main())
 ```
 
+#### 📄 **PDF CLI (No UI)**
+
+If you want to skip the Web UI and generate directly from a PDF, use the bundled script:
+
+```bash
+uv run python generate_from_pdf.py \
+  --pdf /path/to/input.pdf \
+  --dialogue tech_discussion \
+  --language zh \
+  --output-name my_podcast
+```
+
+**Parameters**
+- `--pdf`: PDF file path
+- `--dialogue`: Dialogue form (maps to DeepSeek profiles)
+- `--language`: Language code or name (e.g., `zh`, `zh-CN`, `en`, `Spanish`)
+- `--output-name`: Episode name and output folder name
+- `--briefing`: Optional briefing override
+- `--output-root`: Output root directory (default `output`)
+- `--log-llm`: Save LLM request/response logs to `output/<episode>/log/`
+
+**Dialogue form mapping**
+- `tech_discussion` → `tech_discussion_deepseek`
+- `solo_expert` → `solo_expert_deepseek`
+- `business_analysis` → `business_analysis_deepseek`
+- `diverse_panel` → `diverse_panel_deepseek`
+
+The script also writes a readable transcript at `output/<episode>/transcript.txt`.
+
 #### 📝 **Classic: Full Configuration**
 
 ```python

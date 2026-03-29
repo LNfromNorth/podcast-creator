@@ -17,6 +17,7 @@ from .core import (
     get_transcript_prompter,
     outline_parser,
 )
+from .llm_logging import get_llm_logger
 from .retry import create_retry_decorator, get_retry_config
 from .state import PodcastState
 from .tts import generate_speech_file
@@ -30,6 +31,8 @@ async def generate_outline_node(state: PodcastState, config: RunnableConfig) -> 
     outline_provider = configurable.get("outline_provider", "openai")
     outline_model_name = configurable.get("outline_model", "gpt-4o-mini")
     outline_config = configurable.get("outline_config") or {}
+    enable_llm_logging = configurable.get("enable_llm_logging", False)
+    llm_logger = get_llm_logger(state["output_dir"], enable_llm_logging)
 
     # Create outline model
     merged_config = {
@@ -49,8 +52,27 @@ async def generate_outline_node(state: PodcastState, config: RunnableConfig) -> 
 
     @llm_retry
     async def _invoke_and_parse(prompt_text: str):
+        if llm_logger:
+            llm_logger.log_request(
+                stage="outline",
+                payload={"prompt": prompt_text},
+                meta={
+                    "provider": outline_provider,
+                    "model": outline_model_name,
+                    "config": merged_config,
+                },
+            )
         result = await outline_model.ainvoke(prompt_text)
         content = extract_text_content(result.content)
+        if llm_logger:
+            llm_logger.log_response(
+                stage="outline",
+                payload={"content": content},
+                meta={
+                    "provider": outline_provider,
+                    "model": outline_model_name,
+                },
+            )
         content = clean_thinking_content(content)
         return outline_parser.invoke(content)
 
@@ -86,6 +108,8 @@ async def generate_transcript_node(state: PodcastState, config: RunnableConfig) 
     transcript_provider: str = configurable.get("transcript_provider", "openai")
     transcript_model_name: str = configurable.get("transcript_model", "gpt-4o-mini")
     transcript_config = configurable.get("transcript_config") or {}
+    enable_llm_logging = configurable.get("enable_llm_logging", False)
+    llm_logger = get_llm_logger(state["output_dir"], enable_llm_logging)
 
     # Create transcript model
     merged_config = {
@@ -110,11 +134,36 @@ async def generate_transcript_node(state: PodcastState, config: RunnableConfig) 
     llm_retry = create_retry_decorator(**retry_cfg)
 
     @llm_retry
-    async def _invoke_and_parse(prompt_text: str):
+    async def _invoke_and_parse(prompt_text: str, stage: str):
+        if llm_logger:
+            llm_logger.log_request(
+                stage=stage,
+                payload={"prompt": prompt_text},
+                meta={
+                    "provider": transcript_provider,
+                    "model": transcript_model_name,
+                    "config": merged_config,
+                },
+            )
         result = await transcript_model.ainvoke(prompt_text)
         content = extract_text_content(result.content)
-        content = clean_thinking_content(content)
-        return validated_transcript_parser.invoke(content)
+        if llm_logger:
+            llm_logger.log_response(
+                stage=stage,
+                payload={"content": content},
+                meta={
+                    "provider": transcript_provider,
+                    "model": transcript_model_name,
+                },
+            )
+        if not content or content.strip().lower() in {"null", "none"}:
+            raise ValueError("Empty transcript response from model")
+        cleaned = content.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.strip("`")
+            cleaned = cleaned.replace("json", "", 1).strip()
+        cleaned = clean_thinking_content(cleaned)
+        return validated_transcript_parser.invoke(cleaned)
 
     # Generate transcript for each segment
     outline = state["outline"]
@@ -144,7 +193,8 @@ async def generate_transcript_node(state: PodcastState, config: RunnableConfig) 
 
         transcript_prompt = get_transcript_prompter()
         transcript_prompt_rendered = transcript_prompt.render(data)
-        result = await _invoke_and_parse(transcript_prompt_rendered)
+        stage = f"transcript_segment_{i + 1}"
+        result = await _invoke_and_parse(transcript_prompt_rendered, stage)
         transcript.extend(result.transcript)
 
     logger.info(f"Generated transcript with {len(transcript)} dialogue segments")

@@ -58,6 +58,7 @@ async def create_podcast(
     retry_max_attempts: Optional[int] = None,
     retry_wait_multiplier: Optional[int] = None,
     language: Optional[str] = None,
+    enable_llm_logging: Optional[bool] = None,
 ) -> Dict:
     """
     High-level function to create a podcast using the LangGraph workflow
@@ -163,6 +164,8 @@ async def create_podcast(
         "outline_config": outline_config,
         "transcript_config": transcript_config,
     }
+    if enable_llm_logging is not None:
+        configurable["enable_llm_logging"] = enable_llm_logging
     if retry_max_attempts is not None:
         configurable["retry_max_attempts"] = retry_max_attempts
     if retry_wait_multiplier is not None:
